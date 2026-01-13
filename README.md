@@ -1,76 +1,125 @@
-# VPM Package Template
 
-Starter for making Packages, including automation for building and publishing them.
+# VRChat VPM Package Template for KIBALAB (GitHub Actions 자동 릴리스)
 
-Once you're all set up, you'll be able to push changes to this repository and have .zip and .unitypackage versions automatically generated, and a listing made which works in the VPM for delivering updates for this package. If you want to make a listing with a variety of packages, check out our [template-package-listing](https://github.com/vrchat-community/template-package-listing) repo.
+이 레포는 **VRChat Creator Companion(VCC) / VRChat Package Manager(VPM)** 용 패키지를 배포하기 위한 템플릿입니다.  
+패키지 레포에서 **태그(릴리스)만 푸시하면**, GitHub Actions가 자동으로 빌드/릴리스를 만들고, 연결된 **VPM Listing 레포**(예: `kibalab/vpm-listing`)에 `repository_dispatch`로 갱신을 요청합니다.
 
-## ▶ Getting Started
+---
 
-* Press [![Use This Template](https://user-images.githubusercontent.com/737888/185467681-e5fdb099-d99f-454b-8d9e-0760e5a6e588.png)](https://github.com/vrchat-community/template-package/generate)
-to start a new GitHub project based on this template.
-  * Choose a fitting repository name and description.
-  * Set the visibility to 'Public'. You can also choose 'Private' and change it later.
-  * You don't need to select 'Include all branches.'
-* Clone this repository locally using Git.
-  * If you're unfamiliar with Git and GitHub, [visit GitHub's documentation](https://docs.github.com/en/get-started/quickstart/git-and-github-learning-resources) to learn more.
-* Add the folder to Unity Hub and open it as a Unity Project.
-* After opening the project, wait while the VPM resolver is downloaded and added to your project.
-  * This gives you access to the VPM Package Maker and Package Resolver tools.
+## 무엇이 자동화되나요?
 
-## 🚇 Migrating Assets Package
-Full details at [Converting Assets to a VPM Package](https://vcc.docs.vrchat.com/guides/convert-unitypackage)
+- 태그 푸시 → Release 생성 (zip + unitypackage + package.json 첨부)
+- Release 완료 → VPM Listing 레포에 “패키지 릴리스됨” 이벤트 전송
+- 패키지 미디어(썸네일 등)도 `Packages/<package_id>/package-media`에 넣어두면 Listing 배포 산출물에 포함되도록 설계 가능
 
-## ✏️ Working on Your Package
+---
 
-* Delete the "Packages/com.vrchat.demo-template" directory or reuse it for your own package.
-  * If you reuse the package, don't forget to rename it and add generated meta files to your repository!
-* Update the `.gitignore` file in the "Packages" directory to include your package.
-  * For example, change `!com.vrchat.demo-template` to `!com.username.package-name`.
-  * `.gitignore` files normally *exclude* the contents of your "Packages" directory. This `.gitignore` in this template show how to *include* the demo package. You can easily change this out for your own package name.
-* Open the Unity project and work on your package's files in your favorite code editor.
-* When you're ready, commit and push your changes.
-* Once you've set up the automation as described below, you can easily publish new versions.
+## 요구 사항
 
-## 🤖 Setting up the Automation
+### 1) 패키지 구조(UPM/VPM 표준)
+패키지는 반드시 다음 경로에 있어야 함.
 
-Create a repository variable with the name and value described below.
-For details on how to create repository variables, see [Creating Configuration Variables for a Repository](https://docs.github.com/en/actions/learn-github-actions/variables#creating-configuration-variables-for-a-repository).
-Make sure you are creating a **repository variable**, and not a **repository secret**.
+```
 
-* `PACKAGE_NAME`: the name of your package, like `com.vrchat.demo-template`.
+Packages/<PACKAGE_ID>/package.json
 
-Finally, go to the "Settings" page for your repo, then choose "Pages", and look for the heading "Build and deployment". Change the "Source" dropdown from "Deploy from a branch" to "GitHub Actions".
+```
 
-That's it!
-Some other notes:
-* We highly recommend you keep the existing folder structure of this template.
-  * The root of the project should be a Unity project.
-  * Your packages should be in the "Packages" directory.
-  * If you deviate from this folder structure, you'll need to update the paths that assume your package is in the "Packages" directory on lines 24, 38, 41 and 57.
-* If you want to store and generate your web files in a folder other than "Website" in the root, you can change the `listPublicDirectory` item [here in build-listing.yml](.github/workflows/build-listing.yml#L17).
+예:
+```
 
-## 🎉 Publishing a Release
+Packages/com.kibalab.package-name/package.json
 
-You can make a release by running the [Build Release](.github/workflows/release.yml) action. The version specified in your `package.json` file will be used to define the version of the release.
+````
 
-## 📃 Rebuilding the Listing
+### 2) Repository Variables
+GitHub 레포 Settings → **Secrets and variables** → **Actions** → **Variables**에 아래 변수를 설정.
 
-Whenever you make a change to a release - manually publishing it, or manually creating, editing or deleting a release, the [Build Repo Listing](.github/workflows/build-listing.yml) action will make a new index of all the releases available, and publish them as a website hosted fore free on [GitHub Pages](https://pages.github.com/). This listing can be used by the VPM to keep your package up to date, and the generated index page can serve as a simple landing page with info for your package. The URL for your package will be in the format `https://username.github.io/repo-name`.
+- `PACKAGE_NAME`  
+  - 예: `com.kibalab.package-name`  
+  - 이 값으로 `Packages/<PACKAGE_NAME>` 경로를 찾아 빌드함.
 
-## 🏠 Customizing the Landing Page (Optional)
+### 3) Repository Secrets
+패키지 릴리스가 끝난 뒤 Listing 레포를 트리거하려면 토큰이 필요함.
 
-The action which rebuilds the listing also publishes a landing page. The source for this page is in `Website/index.html`. The automation system uses [Scriban](https://github.com/scriban/scriban) to fill in the objects like `{{ this }}` with information from the latest release's manifest, so it will stay up-to-date with the name, id and description that you provide there. You are welcome to modify this page however you want - just use the existing `{{ template.objects }}` to fill in that info wherever you like. The entire contents of your "Website" folder are published to your GitHub Page each time.
+- `VPM_LISTING_DISPATCH_TOKEN`  
+  - **fine-grained PAT**
+  - 권한: `kibalab/vpm-listing` (대상 레포만 선택) + Contents(write)
+  - 이 토큰으로 Listing 레포에 `repository_dispatch`를 보냄.
 
-## 💻 Technical Stuff
+> 패키지 레포가 private이고, Listing 레포가 빌드 중 패키지 레포를 clone해야 한다면  
+> Listing 레포 쪽에 별도의 read token(`VPM_PACKAGES_READ_TOKEN`)이 필요.
 
-You are welcome to make your own changes to the automation process to make it fit your needs, and you can create Pull Requests if you have some changes you think we should adopt. Here's some more info on the included automation:
+---
 
-### Build Release Action
-[release.yml](/.github/workflows/release.yml)
+## 빠른 시작
 
-This is a composite action combining a variety of existing GitHub Actions and some shell commands to create both a .zip of your Package and a .unitypackage. It creates a release which is named for the `version` in the `package.json` file found in your target Package, and publishes the zip, the unitypackage and the package.json file to this release.
+### 1) 템플릿에서 새 레포 만들기
+- `Use this template`로 새 레포 생성
 
-### Build Repo Listing
-[build-listing.yml](.github/workflows/build-listing.yml)
+### 2) 패키지 ID 정하기
+- `Packages/<PACKAGE_ID>/package.json`의 `"name"`이 패키지 ID입니다.
+- 예: `"name": "com.kibalab.package-name"`
 
-This is a composite action which builds a vpm-compatible [Repo Listing](https://vcc.docs.vrchat.com/vpm/repos) based on the releases you've created. In order to find all your releases and combine them into a listing, it checks out [another repository](https://github.com/vrchat-community/package-list-action) which has a [Nuke](https://nuke.build/) project which includes the VPM core lib to have access to its types and methods. This project will be expanded to include more functionality in the future - for now, the action just calls its `BuildRepoListing` target.
+### 3) Repository Variable 설정
+- `PACKAGE_NAME = com.kibalab.package-name`
+
+### 4) 태그 푸시로 릴리스 만들기
+릴리스는 보통 아래 순서로 합니다.
+
+1) `package.json`의 `"version"`을 올림 (ex: `0.1.0` → `0.1.1`)
+2) 커밋/푸시
+3) 같은 버전 태그를 찍고 푸시
+
+```bash
+git add Packages/com.kibalab.package-name/package.json
+git commit -m "Bump version to 0.1.1"
+git push
+
+git tag 0.1.1
+git push origin 0.1.1
+````
+
+> 워크플로우에서 “태그 버전 == package.json 버전” 검증을 켜두었다면
+> 둘이 다르면 릴리스가 실패처리 됩니다.
+
+---
+
+## 패키지 미디어(썸네일 등)
+
+### 권장 경로
+
+패키지 레포 안에 다음 폴더를 만들고 파일을 넣습니다.
+
+```
+Packages/<PACKAGE_ID>/package-media/
+```
+
+예:
+
+```
+Packages/com.kibalab.package-name/package-media/thumbnail.png
+Packages/com.kibalab.package-name/package-media/banner.png
+```
+
+Listing 레포 빌드에서 이 폴더들을 수집/머지하도록 구성되어 있다면, 배포 결과로 아래처럼 서빙될 수 있습니다.
+
+* `https://.../package-media/<package_id>/thumbnail.png`
+
+> 머지 정책에 따라 Listing 레포에 같은 파일이 이미 있으면 덮어쓰지 않을 수 있습니다.
+> (예: `rsync --ignore-existing` 사용 시 Listing 쪽 파일이 우선)
+
+---
+
+## GitHub Actions 워크플로우
+
+### `release.yml` (패키지 레포)
+
+* 태그 푸시를 트리거로 실행
+* `Packages/<PACKAGE_NAME>` 폴더를 zip으로 만들고 `.unitypackage`도 생성
+* GitHub Release에 업로드
+* 마지막에 Listing 레포로 `repository_dispatch` 이벤트 전송
+
+---
+
+```
