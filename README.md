@@ -147,6 +147,9 @@ on:
     tags:
       - '*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     uses: kibalab/vpm-package-template/.github/workflows/vpm-release.yml@main

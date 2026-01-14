@@ -35,8 +35,6 @@ jobs:
   build:
     needs: config
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
       packagePath: Packages/${{ inputs.package_name }}
     if: needs.config.outputs.config_package == 'true'
