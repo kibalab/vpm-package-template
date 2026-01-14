@@ -120,9 +120,44 @@ Packages/<PACKAGE_ID>/package-media/thumbnail.png
 
 ---
 
-## 워크플로우 동작
+## 워크플로우 구조
 
-`.github/workflows/release.yml`이 다음을 수행합니다:
+### Reusable Workflow (중앙 관리)
+
+모든 패키지 레포가 `vpm-package-template`의 워크플로우를 참조합니다.
+중앙 워크플로우를 수정하면 **모든 패키지 레포에 자동 적용**됩니다.
+
+```
+vpm-package-template/.github/workflows/
+├── vpm-release.yml    # 재사용 가능한 워크플로우 (실제 로직)
+└── release.yml        # 호출 예시
+
+각 패키지 레포/.github/workflows/
+└── release.yml        # 중앙 워크플로우 호출 (16줄)
+```
+
+### 각 패키지 레포의 release.yml
+
+```yaml
+name: Build Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    uses: kibalab/vpm-package-template/.github/workflows/vpm-release.yml@main
+    with:
+      package_name: ${{ vars.PACKAGE_NAME }}
+      vpm_backend_url: ${{ vars.VPM_BACKEND_URL || 'https://vpm.kiba.red' }}
+    secrets:
+      VPM_API_KEY: ${{ secrets.VPM_API_KEY }}
+```
+
+### 워크플로우 동작
 
 1. **빌드**
    - `Packages/<PACKAGE_NAME>` 폴더를 ZIP으로 압축
