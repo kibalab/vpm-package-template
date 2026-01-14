@@ -1,125 +1,161 @@
+# VRChat VPM Package Template for KIBALAB
 
-# VRChat VPM Package Template for KIBALAB (GitHub Actions 자동 릴리스)
+VRChat Creator Companion(VCC) / VRChat Package Manager(VPM) 패키지 배포를 위한 템플릿입니다.
 
-이 레포는 **VRChat Creator Companion(VCC) / VRChat Package Manager(VPM)** 용 패키지를 배포하기 위한 템플릿입니다.  
-패키지 레포에서 **태그(릴리스)만 푸시하면**, GitHub Actions가 자동으로 빌드/릴리스를 만들고, 연결된 **VPM Listing 레포**(예: `kibalab/vpm-listing`)에 `repository_dispatch`로 갱신을 요청합니다.
-
----
-
-## 무엇이 자동화되나요?
-
-- 태그 푸시 → Release 생성 (zip + unitypackage + package.json 첨부)
-- Release 완료 → VPM Listing 레포에 “패키지 릴리스됨” 이벤트 전송
-- 패키지 미디어(썸네일 등)도 `Packages/<package_id>/package-media`에 넣어두면 Listing 배포 산출물에 포함되도록 설계 가능
+**태그(릴리스)를 푸시하면** GitHub Actions가 자동으로:
+1. Release 생성 (zip + unitypackage + package.json)
+2. VPM 백엔드에 패키지 정보 등록
+3. 즉시 [vpm.kiba.red](https://vpm.kiba.red)에 반영
 
 ---
 
 ## 요구 사항
 
-### 1) 패키지 구조(UPM/VPM 표준)
-패키지는 반드시 다음 경로에 있어야 함.
+### 1) 패키지 구조 (UPM/VPM 표준)
 
 ```
-
-Packages/<PACKAGE_ID>/package.json
-
+Packages/<PACKAGE_ID>/
+├── package.json
+├── Runtime/
+├── Editor/
+└── package-media/        # (선택) 썸네일 이미지
+    └── thumbnail.png
 ```
 
-예:
+예시:
+```
+Packages/com.kibalab.mypackage/package.json
 ```
 
-Packages/com.kibalab.package-name/package.json
+### 2) package.json 필수 필드
 
-````
-
-### 2) Repository Variables
-GitHub 레포 Settings → **Secrets and variables** → **Actions** → **Variables**에 아래 변수를 설정.
-
-- `PACKAGE_NAME`  
-  - 예: `com.kibalab.package-name`  
-  - 이 값으로 `Packages/<PACKAGE_NAME>` 경로를 찾아 빌드함.
-
-### 3) Repository Secrets
-패키지 릴리스가 끝난 뒤 Listing 레포를 트리거하려면 토큰이 필요함.
-
-- `VPM_LISTING_DISPATCH_TOKEN`  
-  - **fine-grained PAT**
-  - 권한: `kibalab/vpm-listing` (대상 레포만 선택) + Contents(write)
-  - 이 토큰으로 Listing 레포에 `repository_dispatch`를 보냄.
-
-> 패키지 레포가 private이고, Listing 레포가 빌드 중 패키지 레포를 clone해야 한다면  
-> Listing 레포 쪽에 별도의 read token(`VPM_PACKAGES_READ_TOKEN`)이 필요.
+```json
+{
+  "name": "com.kibalab.mypackage",
+  "displayName": "My Package",
+  "version": "1.0.0",
+  "description": "패키지 설명",
+  "author": {
+    "name": "Your Name",
+    "email": "your@email.com",
+    "url": "https://your-site.com"
+  },
+  "vpmDependencies": {
+    "com.vrchat.worlds": "3.x.x"
+  }
+}
+```
 
 ---
 
-## 빠른 시작
+## 설정 방법
 
-### 1) 템플릿에서 새 레포 만들기
-- `Use this template`로 새 레포 생성
+### 1) Repository Variables
 
-### 2) 패키지 ID 정하기
-- `Packages/<PACKAGE_ID>/package.json`의 `"name"`이 패키지 ID입니다.
-- 예: `"name": "com.kibalab.package-name"`
+GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **Variables**
 
-### 3) Repository Variable 설정
-- `PACKAGE_NAME = com.kibalab.package-name`
+| Variable | 설명 | 예시 |
+|----------|------|------|
+| `PACKAGE_NAME` | 패키지 폴더 이름 | `com.kibalab.mypackage` |
+| `VPM_BACKEND_URL` | VPM 백엔드 URL | `https://vpm.kiba.red` |
 
-### 4) 태그 푸시로 릴리스 만들기
-릴리스는 보통 아래 순서로 합니다.
+### 2) Repository Secrets
 
-1) `package.json`의 `"version"`을 올림 (ex: `0.1.0` → `0.1.1`)
-2) 커밋/푸시
-3) 같은 버전 태그를 찍고 푸시
+GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **Secrets**
+
+| Secret | 설명 |
+|--------|------|
+| `VPM_API_KEY` | VPM 백엔드 API 키 (관리자에게 문의) |
+
+---
+
+## 사용 방법
+
+### 새 패키지 생성
+
+1. **Use this template**로 새 저장소 생성
+2. `Packages/` 폴더 아래에 패키지 ID로 폴더 생성
+3. `package.json` 작성
+4. Repository Variables/Secrets 설정
+
+### 릴리스 배포
+
+1. `package.json`의 `version` 업데이트
+2. 커밋 & 푸시
+3. 같은 버전으로 태그 생성 & 푸시
 
 ```bash
-git add Packages/com.kibalab.package-name/package.json
-git commit -m "Bump version to 0.1.1"
+# 버전 업데이트 후 커밋
+git add Packages/com.kibalab.mypackage/package.json
+git commit -m "Bump version to 1.0.1"
 git push
 
-git tag 0.1.1
-git push origin 0.1.1
-````
+# 태그 생성 및 푸시
+git tag 1.0.1
+git push origin 1.0.1
+```
 
-> 워크플로우에서 “태그 버전 == package.json 버전” 검증을 켜두었다면
-> 둘이 다르면 릴리스가 실패처리 됩니다.
+> 태그 버전과 package.json 버전이 일치해야 합니다. (`v1.0.1` 또는 `1.0.1` 형식 모두 지원)
 
 ---
 
-## 패키지 미디어(썸네일 등)
+## 썸네일 이미지
 
-### 권장 경로
+VPM 프론트엔드에 표시될 썸네일을 설정할 수 있습니다.
 
-패키지 레포 안에 다음 폴더를 만들고 파일을 넣습니다.
-
+### 방법 1: 패키지 내 썸네일 (권장)
 ```
-Packages/<PACKAGE_ID>/package-media/
-```
-
-예:
-
-```
-Packages/com.kibalab.package-name/package-media/thumbnail.png
-Packages/com.kibalab.package-name/package-media/banner.png
+Packages/<PACKAGE_ID>/package-media/thumbnail.png
 ```
 
-Listing 레포 빌드에서 이 폴더들을 수집/머지하도록 구성되어 있다면, 배포 결과로 아래처럼 서빙될 수 있습니다.
+### 방법 2: 저장소 루트 썸네일
+```
+.github/vpm-thumbnail.png
+```
 
-* `https://.../package-media/<package_id>/thumbnail.png`
-
-> 머지 정책에 따라 Listing 레포에 같은 파일이 이미 있으면 덮어쓰지 않을 수 있습니다.
-> (예: `rsync --ignore-existing` 사용 시 Listing 쪽 파일이 우선)
+**권장 사양:**
+- 형식: PNG
+- 크기: 512x512 또는 16:9 비율
+- 용량: 500KB 이하
 
 ---
 
-## GitHub Actions 워크플로우
+## 워크플로우 동작
 
-### `release.yml` (패키지 레포)
+`.github/workflows/release.yml`이 다음을 수행합니다:
 
-* 태그 푸시를 트리거로 실행
-* `Packages/<PACKAGE_NAME>` 폴더를 zip으로 만들고 `.unitypackage`도 생성
-* GitHub Release에 업로드
-* 마지막에 Listing 레포로 `repository_dispatch` 이벤트 전송
+1. **빌드**
+   - `Packages/<PACKAGE_NAME>` 폴더를 ZIP으로 압축
+   - `.unitypackage` 파일 생성
+
+2. **GitHub Release 생성**
+   - ZIP, unitypackage, package.json 첨부
+
+3. **VPM 백엔드 등록**
+   - 패키지 정보를 백엔드 API로 전송
+   - 썸네일 URL 자동 감지 및 등록
 
 ---
 
-```
+## 문제 해결
+
+### 워크플로우 실패: "Tag does not match version"
+- `package.json`의 `version`과 Git 태그가 일치하는지 확인
+- 태그는 `1.0.0` 또는 `v1.0.0` 형식 모두 가능
+
+### 패키지가 목록에 표시되지 않음
+- GitHub Actions 로그에서 백엔드 응답 확인
+- `VPM_BACKEND_URL`과 `VPM_API_KEY` 설정 확인
+- 백엔드 관리자에게 API 키 유효성 문의
+
+### 썸네일이 표시되지 않음
+- 파일 경로가 정확한지 확인
+- 이미지가 `main` 브랜치에 푸시되어 있는지 확인
+- Raw URL 접근 가능 여부 확인
+
+---
+
+## 관련 링크
+
+- [VPM 패키지 목록](https://vpm.kiba.red)
+- [VCC에 추가하기](https://vpm.kiba.red/vcc)
