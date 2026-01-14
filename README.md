@@ -1,3 +1,7 @@
+**한국어** | [English](README.en.md) | [日本語](README.ja.md)
+
+---
+
 # VRChat VPM Package Template for KIBALAB
 
 VRChat Creator Companion(VCC) / VRChat Package Manager(VPM) 패키지 배포를 위한 템플릿입니다.
